@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operaciones Zonal - Dashboard Folios</title>
+    <style>
+        :root {
+            --bg: #edf2f7;
+            --surface: #ffffff;
+            --surface-soft: #f8fafc;
+            --stroke: #d9e2ec;
+            --text: #274156;
+            --muted: #74839a;
+            --brand: #003399;
+            --teal: #00a79d;
+            --red: #dc2626;
+            --orange: #f97316;
+            --amber: #f59e0b;
+            --green: #16a34a;
+            --shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: linear-gradient(180deg, #f8fafc 0%, var(--bg) 100%);
+            color: var(--text);
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+        .shell {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+        .banner-card, .toolbar, .segment-block, .section-card {
+            background: var(--surface);
+            border: 1px solid var(--stroke);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+        }
+        .nav-card {
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid var(--stroke);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            padding: 9px 12px;
+            position: sticky;
+            top: 10px;
+            z-index: 5;
+            backdrop-filter: blur(10px);
+        }
+        .nav-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .nav-links a {
+            display: inline-flex;
+            align-items: center;
+            padding: 7px 11px;
+            border-radius: 999px;
+            text-decoration: none;
+            color: #506277;
+            background: #f8fafc;
+            border: 1px solid #dbe4ee;
+            font-size: 0.84rem;
+            font-weight: 700;
+        }
+        .nav-links a:hover {
+            color: var(--brand);
+            border-color: #bfd0e3;
+            background: #ffffff;
+        }
+        .banner-card {
+            overflow: hidden;
+            padding: 8px;
+        }
+        .banner-card img {
+            display: block;
+            width: 100%;
+            border-radius: 14px;
+        }
+        .banner-fallback {
+            min-height: 128px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(90deg, #ffffff 0%, #f3f4f6 100%);
+            color: var(--brand);
+            font-size: 2rem;
+            font-weight: 800;
+            border-radius: 14px;
+        }
+        .toolbar {
+            margin-top: 12px;
+            padding: 13px 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: end;
+            justify-content: space-between;
+        }
+        .toolbar-filters {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 9px;
+            align-items: end;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .toolbar-filters > div {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+        .toolbar h2 {
+            margin: 0 0 6px;
+            font-size: 1rem;
+            color: var(--brand);
+        }
+        .toolbar label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .toolbar select {
+            min-width: 0;
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            background: #fff;
+            font-size: 0.88rem;
+            color: var(--text);
+        }
+        .stamp {
+            margin-left: auto;
+            align-self: center;
+            display: inline-flex;
+            align-items: center;
+            padding: 7px 11px;
+            border-radius: 999px;
+            background: #ebf5ff;
+            color: var(--brand);
+            font-size: 0.86rem;
+            font-weight: 700;
+        }
+        .section-title {
+            margin: 14px 0 7px;
+            font-size: 0.78rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            font-weight: 800;
+        }
+        .summary-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .segment-block {
+            padding: 13px;
+        }
+        .segment-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 9px;
+        }
+        .segment-head h3 {
+            margin: 0;
+            color: var(--brand);
+            font-size: 1.08rem;
+        }
+        .segment-grid {
+            display: grid;
+            gap: 9px;
+        }
+        .segment-grid.sup { grid-template-columns: repeat(3, minmax(180px, 1fr)); }
+        .segment-grid.ot { grid-template-columns: repeat(5, minmax(180px, 1fr)); }
+        .metric-card {
+            padding: 13px 13px;
+            border-radius: 16px;
+            background: var(--surface-soft);
+            border: 1px solid #e2e8f0;
+            min-height: 118px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .metric-card.red { border-top: 4px solid var(--red); }
+        .metric-card.orange { border-top: 4px solid var(--orange); }
+        .metric-card.amber { border-top: 4px solid var(--amber); }
+        .metric-card.green { border-top: 4px solid var(--green); }
+        .metric-label {
+            font-size: 0.74rem;
+            font-weight: 800;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            min-height: 34px;
+        }
+        .metric-q {
+            margin-top: 4px;
+            font-size: 1.9rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+        .metric-m {
+            margin-top: 3px;
+            font-size: 0.82rem;
+            color: var(--muted);
+            font-weight: 700;
+        }
+        .section-grid {
+            display: grid;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .section-card {
+            padding: 13px;
+        }
+        .section-card h3 {
+            margin: 0 0 8px;
+            color: var(--brand);
+            font-size: 1.03rem;
+        }
+        .section-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            margin: -1px 0 8px;
+            color: var(--muted);
+            font-size: 0.78rem;
+        }
+        .section-totals {
+            font-weight: 700;
+        }
+        .section-date {
+            opacity: 0.68;
+            text-align: right;
+        }
+        .unit-grid {
+            display: grid;
+            gap: 12px;
+        }
+        .unit-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .unit-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            padding: 14px 16px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .unit-name {
+            font-size: 0.98rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+        .unit-total {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--muted);
+        }
+        .segment-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .segment-row {
+            display: grid;
+            grid-template-columns: 1fr 110px 140px;
+            gap: 14px;
+            align-items: center;
+            padding: 12px 16px;
+            border-top: 1px solid #eef2f7;
+            font-size: 0.92rem;
+        }
+        .segment-row:first-child { border-top: 0; }
+        .segment-row .q, .segment-row .m { text-align: right; font-weight: 700; }
+        .hier-grid {
+            display: grid;
+            gap: 10px;
+        }
+        .hier-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .hier-segment {
+            padding: 10px 14px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 800;
+            color: var(--brand);
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+        }
+        .hier-segment-meta {
+            font-size: 0.82rem;
+            font-weight: 800;
+        }
+        .hier-unit {
+            padding: 8px 14px;
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: #21384d;
+            background: #eef3f8;
+            border-top: 1px solid #dbe4ee;
+            display: grid;
+            grid-template-columns: 1fr 110px 140px;
+            gap: 14px;
+            align-items: center;
+        }
+        .hier-unit .num {
+            text-align: right;
+            font-weight: 800;
+            white-space: nowrap;
+            color: #40566d;
+        }
+        .hier-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .hier-table th {
+            padding: 8px 16px;
+            text-align: left;
+            font-size: 0.74rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-top: 1px solid #eef2f7;
+            background: #fff;
+        }
+        .hier-table td {
+            padding: 7px 14px;
+            border-top: 1px solid #eef2f7;
+        }
+        .hier-table td.num {
+            text-align: right;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .hier-table th.num {
+            text-align: right;
+        }
+        .folio-hint {
+            margin-left: 6px;
+            font-size: 0.72rem;
+            opacity: 0.6;
+            color: #74839a;
+            white-space: normal;
+        }
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+        }
+        .detail-table th, .detail-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        .detail-table th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .detail-table td.num, .detail-table th.num {
+            text-align: right;
+        }
+        .band-purple { background: #7e3fb2; color: #ffffff; }
+        .band-red { background: #d90404; color: #ffffff; }
+        .band-amber { background: #ffc20e; color: #314255; }
+        .band-cream { background: #fff0bd; color: #455468; }
+        .band-green { background: #06b54a; color: #ffffff; }
+        .band-neutral { background: #dbeafe; color: #1e3a8a; }
+        .hier-columns {
+            display: grid;
+            grid-template-columns: 1fr 110px 140px;
+            gap: 14px;
+            padding: 0 14px 7px;
+            color: #70819a;
+            font-size: 0.74rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .hier-columns .num {
+            text-align: right;
+        }
+        .client-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.92rem;
+        }
+        .client-table th, .client-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        .client-table th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .client-table td.num, .client-table th.num { text-align: right; }
+        .empty {
+            padding: 16px;
+            border: 1px dashed #cbd5e1;
+            border-radius: 14px;
+            text-align: center;
+            color: var(--muted);
+            background: #f8fafc;
+        }
+        .footer {
+            margin-top: 24px;
+            padding: 16px;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--muted);
+            border-top: 1px solid var(--stroke);
+        }
+        .footer a {
+            color: var(--brand);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 1120px) {
+            .segment-grid.sup, .segment-grid.ot { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 760px) {
+            .shell { padding: 14px; }
+            .segment-grid.sup, .segment-grid.ot { grid-template-columns: 1fr; }
+            .segment-row { grid-template-columns: 1fr; }
+            .segment-row .q, .segment-row .m { text-align: left; }
+            .toolbar { align-items: stretch; }
+            .toolbar-filters { width: 100%; flex-wrap: wrap; }
+            .toolbar-filters > div { min-width: 100%; }
+            .toolbar select { min-width: 100%; width: 100%; }
+            .section-meta { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <section class="banner-card" id="bannerHost"></section>
+        
+
+        <section class="toolbar">
+        <div class="stamp" id="updatedStamp"></div>
+            <div class="toolbar-filters">
+                <div>
+                    <h2>Segmentadores</h2>
+                    <label for="unitFilter">Unidad</label>
+                    <select id="unitFilter"></select>
+                </div>
+                <div>
+                    <label for="ownerFilter">Nombre Utilizado</label>
+                    <select id="ownerFilter"></select>
+                </div>
+                <div>
+                    <label for="segmentFilter">Segmento</label>
+                    <select id="segmentFilter"></select>
+                </div>
+                <div>
+                    <label for="clientFilter">Cliente</label>
+                    <select id="clientFilter"></select>
+                </div>
+            </div>
+            
+        </section>
+
+        <nav class="nav-card">
+            <div class="nav-links">
+                <a href="#resumen-alto-nivel">0. Resumen Alto Nivel</a>
+                <a href="#seccion-supervisor">1. Supervisor</a>
+                <a href="#seccion-ot">2. OT/Código</a>
+                <a href="#seccion-cliente">3. Cliente</a>
+            </div>
+        </nav>
+
+        <div class="section-title" id="resumen-alto-nivel">0. Resumen Alto Nivel</div>
+        <section class="summary-layout">
+            <article class="segment-block">
+                <div class="segment-head">
+                    <h3>Pendiente Validación Supervisor</h3>
+                </div>
+                <div class="segment-grid sup" id="supCards"></div>
+            </article>
+            <article class="segment-block">
+                <div class="segment-head">
+                    <h3>Pendiente de OT/Código</h3>
+                </div>
+                <div class="segment-grid ot" id="otCards"></div>
+            </article>
+        </section>
+
+        <section class="section-grid" id="seccion-supervisor">
+            <article class="section-card">
+                <h3>1. Resumen de Folios Pendientes de Validación de Supervisor</h3>
+                <div id="supSummary"></div>
+            </article>
+            <article class="section-card">
+                <h3>2. Listado Crítico (&gt; 10 dias)</h3>
+                <div id="supCritical"></div>
+            </article>
+            <article class="section-card">
+                <h3>3. Riesgo Proximo Lunes</h3>
+                <div id="supRisk"></div>
+            </article>
+        </section>
+
+        <section class="section-grid" id="seccion-ot">
+            <article class="section-card">
+                <h3>2. Resumen de Folios Pendientes de OT/Código</h3>
+                <div id="otSummary"></div>
+            </article>
+            <article class="section-card">
+                <h3>2. Listado Crítico (&gt; 60d)</h3>
+                <div id="otCritical60"></div>
+            </article>
+            <article class="section-card">
+                <h3>3. Listado Crítico (&gt; 45d)</h3>
+                <div id="otCritical45"></div>
+            </article>
+            <article class="section-card">
+                <h3>4. Entre 40-45d</h3>
+                <div id="otRisk40"></div>
+            </article>
+            <article class="section-card">
+                <h3>5. Entre 30-40d</h3>
+                <div id="otRange30"></div>
+            </article>
+            <article class="section-card">
+                <h3>6. Entre 0-30d</h3>
+                <div id="otRange0"></div>
+            </article>
+        </section>
+
+        <section class="section-grid" id="seccion-cliente">
+            <article class="section-card">
+                <h3>3. Detalle por Cliente</h3>
+                <div id="clientSummary"></div>
+            </article>
+        </section>
+
+        <footer class="footer">
+            &copy; Desarrollado por Operaciones Zonal Rancagua. Soporte: Felipe Cancino (<a href="mailto:fecancinoq@cge.cl">fecancinoq@cge.cl</a> - <a href="mailto:felipe.cancino@aimpulse.cl">felipe.cancino@aimpulse.cl</a>) | <a href="https://wa.me/56976001297" target="_blank">Contactar por WhatsApp (+56 9 7600 1297)</a>
+        </footer>
+    </div>
+
+    <script>
+        const DASHBOARD_DATA = {"updated_ts": "30-03-2026 19:00 (Datos BBDD)", "banner_src": "data:image/jpeg;base64,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", "records": [{"folio": "578313", "unidad": "20. RANCAGUA", "nombre_utilizado": "Joaquín Aros", "cliente": "ELECTRICIDAD SERBRIP LTDA", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-17 15:28:27.280", "monto": 1538050, "dias_atraso": 13, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "578315", "unidad": "20. RANCAGUA", "nombre_utilizado": "Joaquín Aros", "cliente": "ELECTRICIDAD SERBRIP LTDA", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-17 15:31:05.060", "monto": 930925, "dias_atraso": 13, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "577906", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-13 16:58:05.913", "monto": 2279936, "dias_atraso": 17, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "577907", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-13 16:59:18.543", "monto": 2196965, "dias_atraso": 17, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "578304", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-17 15:22:38.643", "monto": 1699140, "dias_atraso": 13, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "578316", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-17 15:33:59.487", "monto": 3436175, "dias_atraso": 13, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "578682", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-19 11:03:40.813", "monto": 4500275, "dias_atraso": 11, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "578868", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-20 11:45:53.767", "monto": 1716269, "dias_atraso": 10, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "578877", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "ELECTRICIDAD SERBRIP LTDA", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-20 12:17:38.780", "monto": 1784542, "dias_atraso": 10, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "578882", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "ELECTRICIDAD SERBRIP LTDA", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-20 12:19:34.347", "monto": 1784542, "dias_atraso": 10, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "577568", "unidad": "20. RANCAGUA", "nombre_utilizado": "Matias Perez", "cliente": "INGENIERIA Y SERVICIOS EISESA LTDA.", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-11 15:14:11.483", "monto": 10137030, "dias_atraso": 19, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "579519", "unidad": "20. RANCAGUA", "nombre_utilizado": "Matias Perez", "cliente": "INGENIERIA Y SERVICIOS EISESA LTDA.", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-25 12:33:11.857", "monto": 2901500, "dias_atraso": 5, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "579522", "unidad": "20. RANCAGUA", "nombre_utilizado": "Matias Perez", "cliente": "INGENIERIA Y SERVICIOS EISESA LTDA.", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-25 12:44:48.910", "monto": 2901500, "dias_atraso": 5, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "577859", "unidad": "20. RANCAGUA", "nombre_utilizado": "Ricardo Pulgar", "cliente": "PELOM INGENIERIA SPA", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-13 13:21:10.363", "monto": 12000000, "dias_atraso": 17, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "577631", "unidad": "21. SAN VICENTE", "nombre_utilizado": "Claudio Ortiz", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-11 17:30:51.647", "monto": 1663664, "dias_atraso": 19, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "577632", "unidad": "21. SAN VICENTE", "nombre_utilizado": "Claudio Ortiz", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-11 17:32:08.653", "monto": 1242642, "dias_atraso": 19, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "577898", "unidad": "21. SAN VICENTE", "nombre_utilizado": "Claudio Ortiz", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-13 16:28:10.093", "monto": 3408562, "dias_atraso": 17, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "577899", "unidad": "21. SAN VICENTE", "nombre_utilizado": "Claudio Ortiz", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-13 16:30:37.757", "monto": 1702639, "dias_atraso": 17, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "577900", "unidad": "21. SAN VICENTE", "nombre_utilizado": "Claudio Ortiz", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-13 16:31:52.140", "monto": 2097130, "dias_atraso": 17, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "578764", "unidad": "21. SAN VICENTE", "nombre_utilizado": "Claudio Ortiz", "cliente": "ELECTRICIDAD SERBRIP LTDA", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-19 15:45:50.077", "monto": 1784542, "dias_atraso": 11, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "578318", "unidad": "44. GRANEROS", "nombre_utilizado": "Pablo Alveal", "cliente": "ELECTRICIDAD SERBRIP LTDA", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-17 15:36:30.677", "monto": 2671350, "dias_atraso": 13, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "578320", "unidad": "44. GRANEROS", "nombre_utilizado": "Pablo Alveal", "cliente": "ELECTRICIDAD SERBRIP LTDA", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-17 15:38:17.697", "monto": 1450000, "dias_atraso": 13, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "578286", "unidad": "44. GRANEROS", "nombre_utilizado": "Tomás Fuentes", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-17 15:07:23.630", "monto": 1716269, "dias_atraso": 13, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "577852", "unidad": "46. LAS CABRAS", "nombre_utilizado": "Augusto Perez", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-13 12:19:26.007", "monto": 2209645, "dias_atraso": 17, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "578270", "unidad": "46. LAS CABRAS", "nombre_utilizado": "Augusto Perez", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-17 14:39:33.557", "monto": 1641049, "dias_atraso": 13, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "578273", "unidad": "46. LAS CABRAS", "nombre_utilizado": "Augusto Perez", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-17 14:41:03.487", "monto": 1702639, "dias_atraso": 13, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "579770", "unidad": "46. LAS CABRAS", "nombre_utilizado": "Augusto Perez", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-26 15:26:59.357", "monto": 1702639, "dias_atraso": 4, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "579771", "unidad": "46. LAS CABRAS", "nombre_utilizado": "Augusto Perez", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-26 15:28:05.173", "monto": 2261723, "dias_atraso": 4, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "577916", "unidad": "55. RENGO", "nombre_utilizado": "Jonathan Ibarra", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-13 17:33:12.867", "monto": 1702639, "dias_atraso": 17, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "578701", "unidad": "55. RENGO", "nombre_utilizado": "Jonathan Ibarra", "cliente": "INGENIERIA Y SERVICIOS EISESA LTDA.", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-19 11:57:33.647", "monto": 4685475, "dias_atraso": 11, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "579138", "unidad": "55. RENGO", "nombre_utilizado": "Jonathan Ibarra", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-23 15:50:12.567", "monto": 1579460, "dias_atraso": 7, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "579137", "unidad": "55. RENGO", "nombre_utilizado": "Octavio Barrios", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-20d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-23 15:47:30.743", "monto": 1579460, "dias_atraso": 7, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "579741", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "DOMINION SPA", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-26 13:59:57.870", "monto": 965909, "dias_atraso": 4, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579955", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 12:47:59.077", "monto": 2279936, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579960", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 12:51:12.257", "monto": 1659418, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579962", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 12:52:53.257", "monto": 835062, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579966", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 12:55:45.737", "monto": 1228504, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579968", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 12:57:00.393", "monto": 910003, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579970", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 12:58:01.703", "monto": 910003, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579971", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 12:59:20.253", "monto": 910003, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580068", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 17:22:36.637", "monto": 1321474, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580069", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 17:24:44.677", "monto": 2506796, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580134", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "DOMINION SPA", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-30 09:29:15.633", "monto": 2653989, "dias_atraso": 0, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580202", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "DOMINION SPA", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-30 11:45:23.407", "monto": 941572, "dias_atraso": 0, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580207", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "DOMINION SPA", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-30 11:59:54.473", "monto": 1559294, "dias_atraso": 0, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580218", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "DOMINION SPA", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-30 12:29:23.280", "monto": 1000880, "dias_atraso": 0, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580225", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "DOMINION SPA", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-30 13:06:10.987", "monto": 908399, "dias_atraso": 0, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580251", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "ELECTRICIDAD SERBRIP LTDA", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-30 14:34:23.413", "monto": 913219, "dias_atraso": 0, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580265", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "DOMINION SPA", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-30 15:24:58.353", "monto": 2026768, "dias_atraso": 0, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579713", "unidad": "21. SAN VICENTE", "nombre_utilizado": "Claudio Ortiz", "cliente": "DOMINION SPA", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-26 12:32:53.583", "monto": 3137500, "dias_atraso": 4, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579893", "unidad": "21. SAN VICENTE", "nombre_utilizado": "Claudio Ortiz", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 11:12:21.303", "monto": 1685648, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579882", "unidad": "44. GRANEROS", "nombre_utilizado": "Tomás Fuentes", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 10:54:04.893", "monto": 1150895, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579947", "unidad": "44. GRANEROS", "nombre_utilizado": "Tomás Fuentes", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 12:32:11.330", "monto": 1150895, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580070", "unidad": "44. GRANEROS", "nombre_utilizado": "Tomás Fuentes", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 17:26:12.570", "monto": 1228504, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580071", "unidad": "44. GRANEROS", "nombre_utilizado": "Tomás Fuentes", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 17:27:33.823", "monto": 3310381, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580072", "unidad": "44. GRANEROS", "nombre_utilizado": "Tomás Fuentes", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 17:28:38.733", "monto": 1228504, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580073", "unidad": "44. GRANEROS", "nombre_utilizado": "Tomás Fuentes", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 17:29:40.233", "monto": 11228504, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580074", "unidad": "44. GRANEROS", "nombre_utilizado": "Tomás Fuentes", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 17:30:39.107", "monto": 1716269, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580035", "unidad": "55. RENGO", "nombre_utilizado": "Benjamin Gamboa", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 16:09:38.827", "monto": 1361465, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580049", "unidad": "55. RENGO", "nombre_utilizado": "Jonathan Ibarra", "cliente": "DOMINION SPA", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 16:28:23.470", "monto": 2125000, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579878", "unidad": "55. RENGO", "nombre_utilizado": "Octavio Barrios", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 10:51:21.523", "monto": 1141543, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579880", "unidad": "55. RENGO", "nombre_utilizado": "Octavio Barrios", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 10:52:45.797", "monto": 1141543, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579973", "unidad": "55. RENGO", "nombre_utilizado": "Octavio Barrios", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 13:00:33.447", "monto": 1173386, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579974", "unidad": "55. RENGO", "nombre_utilizado": "Octavio Barrios", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 13:01:31.290", "monto": 1173386, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579976", "unidad": "55. RENGO", "nombre_utilizado": "Octavio Barrios", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 13:03:38.763", "monto": 1218516, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579977", "unidad": "55. RENGO", "nombre_utilizado": "Octavio Barrios", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 13:04:41.587", "monto": 902605, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "579873", "unidad": "56. PMGD", "nombre_utilizado": "Jaime Herrera", "cliente": "DOMINION SPA", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-27 10:40:24.997", "monto": 24073900, "dias_atraso": 3, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580119", "unidad": "56. PMGD", "nombre_utilizado": "Jaime Herrera", "cliente": "DOMINION SPA", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-30 09:04:31.967", "monto": 1800000, "dias_atraso": 0, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "580129", "unidad": "56. PMGD", "nombre_utilizado": "Jaime Herrera", "cliente": "DOMINION SPA", "segmento": "1. Entre 0-5d", "tipo_estado": "Pendiente Validación Supervisor", "estado": "Pendiente", "fecha_ingreso": "2026-03-30 09:17:03.810", "monto": 1800000, "dias_atraso": 0, "tipo_estado_norm": "pendiente validacion supervisor", "estado_norm": "pendiente", "kind": "supervisor", "sup_bucket": "0_5", "sup_risk": false, "ot_bucket": ""}, {"folio": "566668", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-05 12:43:59.363", "monto": 909787, "dias_atraso": 25, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "576909", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "INGENIERIA Y SERVICIOS EISESA LTDA.", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-06 13:16:10.970", "monto": 1658438, "dias_atraso": 24, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "576959", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-06 17:44:19.650", "monto": 1252502, "dias_atraso": 24, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "576961", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-06 17:46:38.107", "monto": 2227431, "dias_atraso": 24, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "576963", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-06 17:48:32.530", "monto": 2227431, "dias_atraso": 24, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "576964", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-06 17:52:23.267", "monto": 2227431, "dias_atraso": 24, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "566670", "unidad": "21. SAN VICENTE", "nombre_utilizado": "Claudio Ortiz", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-05 12:46:54.887", "monto": 1819574, "dias_atraso": 25, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "576952", "unidad": "21. SAN VICENTE", "nombre_utilizado": "Claudio Ortiz", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-06 17:33:17.570", "monto": 1663664, "dias_atraso": 24, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "576911", "unidad": "44. GRANEROS", "nombre_utilizado": "Alexander Cabrera", "cliente": "INGENIERIA Y SERVICIOS EISESA LTDA.", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-06 13:21:58.540", "monto": 3852505, "dias_atraso": 24, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "566669", "unidad": "44. GRANEROS", "nombre_utilizado": "Tomás Fuentes", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-05 12:45:09.063", "monto": 909787, "dias_atraso": 25, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "566533", "unidad": "46. LAS CABRAS", "nombre_utilizado": "Augusto Perez", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-04 18:03:35.770", "monto": 881450, "dias_atraso": 26, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "566534", "unidad": "46. LAS CABRAS", "nombre_utilizado": "Augusto Perez", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-04 18:04:33.843", "monto": 1189958, "dias_atraso": 26, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "566535", "unidad": "46. LAS CABRAS", "nombre_utilizado": "Augusto Perez", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-04 18:05:33.737", "monto": 1543372, "dias_atraso": 26, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "566536", "unidad": "46. LAS CABRAS", "nombre_utilizado": "Augusto Perez", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-04 18:06:43.660", "monto": 3329605, "dias_atraso": 26, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "566663", "unidad": "46. LAS CABRAS", "nombre_utilizado": "Augusto Perez", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-05 12:41:11.127", "monto": 1819574, "dias_atraso": 25, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "576958", "unidad": "55. RENGO", "nombre_utilizado": "Jonathan Ibarra", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-06 17:42:21.950", "monto": 1252502, "dias_atraso": 24, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "566667", "unidad": "55. RENGO", "nombre_utilizado": "Octavio Barrios", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "2. Entre 20-30d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-03-05 12:42:47.373", "monto": 1819574, "dias_atraso": 25, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "0_30"}, {"folio": "565299", "unidad": "44. GRANEROS", "nombre_utilizado": "Pablo Alveal", "cliente": "ELECTRICIDAD SERBRIP LTDA", "segmento": "3. Entre 30-40d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-02-24 16:28:48.623", "monto": 1133300, "dias_atraso": 34, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "gt30"}, {"folio": "565750", "unidad": "46. LAS CABRAS", "nombre_utilizado": "Augusto Perez", "cliente": "CIELECTRIC INGENIERIA LIMITADA", "segmento": "3. Entre 30-40d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-02-27 09:53:32.623", "monto": 1602113, "dias_atraso": 31, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "gt30"}, {"folio": "561556", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "5. Mayor a 45d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-01-30 00:13:13.987", "monto": 909787, "dias_atraso": 59, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "gt45"}, {"folio": "561935", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "5. Mayor a 45d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-02-02 15:54:31.197", "monto": 909787, "dias_atraso": 56, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "gt45"}, {"folio": "562962", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "5. Mayor a 45d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-02-06 16:42:39.997", "monto": 2483585, "dias_atraso": 52, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "gt45"}, {"folio": "561559", "unidad": "21. SAN VICENTE", "nombre_utilizado": "Claudio Ortiz", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "5. Mayor a 45d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-01-30 00:31:59.227", "monto": 1819574, "dias_atraso": 59, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "gt45"}, {"folio": "561940", "unidad": "21. SAN VICENTE", "nombre_utilizado": "Claudio Ortiz", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "5. Mayor a 45d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-02-02 15:58:16.633", "monto": 1819574, "dias_atraso": 56, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "gt45"}, {"folio": "561557", "unidad": "44. GRANEROS", "nombre_utilizado": "Tomás Fuentes", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "5. Mayor a 45d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-01-30 00:16:40.807", "monto": 909787, "dias_atraso": 59, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "gt45"}, {"folio": "561933", "unidad": "44. GRANEROS", "nombre_utilizado": "Tomás Fuentes", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "5. Mayor a 45d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-02-02 15:52:54.787", "monto": 909787, "dias_atraso": 56, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "gt45"}, {"folio": "561560", "unidad": "46. LAS CABRAS", "nombre_utilizado": "Augusto Perez", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "5. Mayor a 45d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-01-30 00:34:43.907", "monto": 1819574, "dias_atraso": 59, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "gt45"}, {"folio": "561942", "unidad": "46. LAS CABRAS", "nombre_utilizado": "Augusto Perez", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "5. Mayor a 45d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-02-02 16:00:00.523", "monto": 1819574, "dias_atraso": 56, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "gt45"}, {"folio": "561938", "unidad": "55. RENGO", "nombre_utilizado": "Jonathan Ibarra", "cliente": "NARI TECHNOLOGY CO. LTD. AGENCIA EN CHILE", "segmento": "5. Mayor a 45d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-02-02 15:56:33.767", "monto": 1819574, "dias_atraso": 56, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "gt45"}, {"folio": "559816", "unidad": "20. RANCAGUA", "nombre_utilizado": "Kevin Madrid", "cliente": "SOC CONTRATISTA Y DE TRANSPORTES KLOY LIMITADA", "segmento": "6. Mayor a 60d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2026-01-20 12:00:07.697", "monto": 2750000, "dias_atraso": 69, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "gt60"}, {"folio": "507115", "unidad": "57. CDC", "nombre_utilizado": "Luis Felipe Donoso", "cliente": "INGENIERIA Y SERVICIOS EISESA LTDA.", "segmento": "6. Mayor a 60d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2025-11-13 17:48:14.850", "monto": 1801683, "dias_atraso": 137, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "gt60"}, {"folio": "522351", "unidad": "57. CDC", "nombre_utilizado": "Luis Felipe Donoso", "cliente": "PELOM INGENIERIA SPA", "segmento": "6. Mayor a 60d", "tipo_estado": "Pendiente de OT/Código", "estado": "Pendiente", "fecha_ingreso": "2025-12-05 17:26:31.873", "monto": 3344117, "dias_atraso": 115, "tipo_estado_norm": "pendiente de ot/codigo", "estado_norm": "pendiente", "kind": "ot", "sup_bucket": "", "sup_risk": false, "ot_bucket": "gt60"}]};
+        const state = { unit: "__all__", owner: "__all__", segment: "__all__", client: "__all__" };
+
+        function fmtMoney(value) {
+            return new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(Number(value || 0));
+        }
+
+        function fmtNumber(value) {
+            return new Intl.NumberFormat("es-CL").format(Number(value || 0));
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        function segmentCode(segment) {
+            const match = String(segment || "").trim().match(/^(\d+)\./);
+            return match ? Number(match[1]) : 0;
+        }
+
+        function segmentBandClass(segment) {
+            const code = segmentCode(segment);
+            if (code === 6) return "band-purple";
+            if (code === 5) return "band-red";
+            if (code === 4) return "band-amber";
+            if (code === 3 || code === 2) return "band-cream";
+            if (code === 1) return "band-green";
+            return "band-neutral";
+        }
+
+        function supervisorBucketForRow(row) {
+            const code = segmentCode(row.segmento);
+            if (code >= 4) return "gt10";
+            if (code === 2 || code === 3) return "gt5";
+            if (code === 1) return "0_5";
+            return "";
+        }
+
+        function otBucketForRow(row) {
+            const code = segmentCode(row.segmento);
+            if (code === 6) return "gt60";
+            if (code === 5) return "gt45";
+            if (code === 4) return "40_45";
+            if (code === 3) return "30_40";
+            if (code === 1 || code === 2) return "0_30";
+            return "";
+        }
+
+        function getFilteredRecords() {
+            return DASHBOARD_DATA.records.filter(row => {
+                if (state.unit !== "__all__" && row.unidad !== state.unit) return false;
+                if (state.owner !== "__all__" && row.nombre_utilizado !== state.owner) return false;
+                if (state.segment !== "__all__" && row.segmento !== state.segment) return false;
+                if (state.client !== "__all__" && row.cliente !== state.client) return false;
+                return true;
+            });
+        }
+
+        function sumMonto(records) {
+            return records.reduce((acc, row) => acc + Number(row.monto || 0), 0);
+        }
+
+        function countMonto(records) {
+            return { q: records.length, monto: sumMonto(records) };
+        }
+
+        function renderBanner() {
+            const host = document.getElementById("bannerHost");
+            if (DASHBOARD_DATA.banner_src) {
+                host.innerHTML = `<img src="${DASHBOARD_DATA.banner_src}" alt="Frame 2">`;
+                return;
+            }
+            host.innerHTML = `<div class="banner-fallback">Operaciones Zonal</div>`;
+        }
+
+        function renderUnitFilter() {
+            const select = document.getElementById("unitFilter");
+            const units = [...new Set(DASHBOARD_DATA.records.map(row => row.unidad || "Sin unidad"))].sort((a, b) => a.localeCompare(b, "es"));
+            const options = [{ value: "__all__", label: "Todas las unidades" }].concat(units.map(unit => ({ value: unit, label: unit })));
+            select.innerHTML = options.map(option => `<option value="${escapeHtml(option.value)}"${option.value === state.unit ? " selected" : ""}>${escapeHtml(option.label)}</option>`).join("");
+            select.onchange = (event) => {
+                state.unit = event.target.value;
+                renderAll();
+            };
+        }
+
+        function renderOwnerFilter() {
+            const select = document.getElementById("ownerFilter");
+            const owners = [...new Set(DASHBOARD_DATA.records.map(row => row.nombre_utilizado || "Sin responsable"))].sort((a, b) => a.localeCompare(b, "es"));
+            const options = [{ value: "__all__", label: "Todos los responsables" }].concat(owners.map(owner => ({ value: owner, label: owner })));
+            select.innerHTML = options.map(option => `<option value="${escapeHtml(option.value)}"${option.value === state.owner ? " selected" : ""}>${escapeHtml(option.label)}</option>`).join("");
+            select.onchange = (event) => {
+                state.owner = event.target.value;
+                renderAll();
+            };
+        }
+
+        function renderSegmentFilter() {
+            const select = document.getElementById("segmentFilter");
+            const segments = [...new Set(DASHBOARD_DATA.records.map(row => row.segmento || "Sin segmento"))].sort((a, b) => a.localeCompare(b, "es"));
+            const options = [{ value: "__all__", label: "Todos los segmentos" }].concat(segments.map(segment => ({ value: segment, label: segment })));
+            select.innerHTML = options.map(option => `<option value="${escapeHtml(option.value)}"${option.value === state.segment ? " selected" : ""}>${escapeHtml(option.label)}</option>`).join("");
+            select.onchange = (event) => {
+                state.segment = event.target.value;
+                renderAll();
+            };
+        }
+
+        function renderClientFilter() {
+            const select = document.getElementById("clientFilter");
+            const clients = [...new Set(DASHBOARD_DATA.records.map(row => row.cliente || "Sin cliente"))].sort((a, b) => a.localeCompare(b, "es"));
+            const options = [{ value: "__all__", label: "Todos los clientes" }].concat(clients.map(client => ({ value: client, label: client })));
+            select.innerHTML = options.map(option => `<option value="${escapeHtml(option.value)}"${option.value === state.client ? " selected" : ""}>${escapeHtml(option.label)}</option>`).join("");
+            select.onchange = (event) => {
+                state.client = event.target.value;
+                renderAll();
+            };
+        }
+
+        function sectionMeta(records) {
+            return `
+                <div class="section-meta">
+                    <div class="section-totals">Q Total: ${fmtNumber(records.length)} | Monto Total: ${fmtMoney(sumMonto(records))}</div>
+                    <div class="section-date">Actualizado ${escapeHtml(DASHBOARD_DATA.updated_ts)}</div>
+                </div>
+            `;
+        }
+
+        function renderMetricCards(hostId, config, records) {
+            const host = document.getElementById(hostId);
+            host.innerHTML = config.map(card => {
+                const subset = records.filter(card.filter);
+                const info = countMonto(subset);
+                return `
+                    <article class="metric-card ${card.tone}">
+                        <div class="metric-label">${escapeHtml(card.label)}</div>
+                        <div class="metric-q">${fmtNumber(info.q)}</div>
+                        <div class="metric-m">${fmtMoney(info.monto)}</div>
+                    </article>
+                `;
+            }).join("");
+        }
+
+        function groupHierarchy(records) {
+            const segmentMap = new Map();
+            records.forEach(row => {
+                const segmentName = row.segmento || "Sin segmento";
+                if (!segmentMap.has(segmentName)) {
+                    segmentMap.set(segmentName, { segmento: segmentName, unidades: new Map() });
+                }
+                const segment = segmentMap.get(segmentName);
+                const unitName = row.unidad || "Sin unidad";
+                if (!segment.unidades.has(unitName)) {
+                    segment.unidades.set(unitName, { unidad: unitName, responsables: new Map() });
+                }
+                const unit = segment.unidades.get(unitName);
+                const ownerName = row.nombre_utilizado || "Sin responsable";
+                if (!unit.responsables.has(ownerName)) {
+                    unit.responsables.set(ownerName, { nombre: ownerName, q: 0, monto: 0, folios: [] });
+                }
+                const owner = unit.responsables.get(ownerName);
+                owner.q += 1;
+                owner.monto += Number(row.monto || 0);
+                if (row.folio) owner.folios.push(String(row.folio));
+            });
+
+            return [...segmentMap.values()]
+                .sort((a, b) => a.segmento.localeCompare(b.segmento, "es"))
+                .map(segment => ({
+                    segmento: segment.segmento,
+                    unidades: [...segment.unidades.values()]
+                        .sort((a, b) => a.unidad.localeCompare(b.unidad, "es"))
+                        .map(unit => ({
+                            unidad: unit.unidad,
+                            responsables: [...unit.responsables.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
+                            totalQ: [...unit.responsables.values()].reduce((acc, owner) => acc + owner.q, 0),
+                            totalMonto: [...unit.responsables.values()].reduce((acc, owner) => acc + owner.monto, 0)
+                        }))
+                }));
+        }
+
+        function renderHierarchyList(hostId, records, emptyMessage) {
+            const host = document.getElementById(hostId);
+            const groups = groupHierarchy(records);
+            if (!groups.length) {
+                host.innerHTML = `<div class="empty">${escapeHtml(emptyMessage)}</div>`;
+                return;
+            }
+            host.innerHTML = `${sectionMeta(records)}<div class="hier-columns"><span>Nombre Utilizado</span><span class="num">Cantidad</span><span class="num">Monto</span></div><div class="hier-grid">${groups.map(segment => `
+                <article class="hier-card">
+                    <div class="hier-segment ${segmentBandClass(segment.segmento)}">
+                        <span>${escapeHtml(segment.segmento)}</span>
+                        <span class="hier-segment-meta">${fmtNumber(segment.unidades.reduce((acc, unit) => acc + unit.responsables.reduce((x, owner) => x + owner.q, 0), 0))} · ${fmtMoney(segment.unidades.reduce((acc, unit) => acc + unit.responsables.reduce((x, owner) => x + owner.monto, 0), 0))}</span>
+                    </div>
+                    ${segment.unidades.map(unit => `
+                        <div class="hier-unit">
+                            <span>${escapeHtml(unit.unidad)}</span>
+                            <span class="num">${fmtNumber(unit.totalQ)}</span>
+                            <span class="num">${fmtMoney(unit.totalMonto)}</span>
+                        </div>
+                        <table class="hier-table">
+                            <colgroup>
+                                <col>
+                                <col style="width:110px">
+                                <col style="width:140px">
+                            </colgroup>
+                            <tbody>
+                                ${unit.responsables.map(owner => `
+                                    <tr>
+                                        <td>${escapeHtml(owner.nombre)}${owner.folios.length ? `<span class="folio-hint">(${escapeHtml(owner.folios.join(", "))})</span>` : ""}</td>
+                                        <td class="num">${fmtNumber(owner.q)}</td>
+                                        <td class="num">${fmtMoney(owner.monto)}</td>
+                                    </tr>
+                                `).join("")}
+                            </tbody>
+                        </table>
+                    `).join("")}
+                </article>
+            `).join("")}</div>`;
+        }
+
+        function renderDetailTable(hostId, records, emptyMessage) {
+            const host = document.getElementById(hostId);
+            if (!records.length) {
+                host.innerHTML = `<div class="empty">${escapeHtml(emptyMessage)}</div>`;
+                return;
+            }
+            const sorted = records.slice().sort((a, b) => {
+                if (a.unidad === b.unidad) {
+                    if (a.nombre_utilizado === b.nombre_utilizado) return String(a.folio).localeCompare(String(b.folio), "es");
+                    return String(a.nombre_utilizado).localeCompare(String(b.nombre_utilizado), "es");
+                }
+                return String(a.unidad).localeCompare(String(b.unidad), "es");
+            });
+            host.innerHTML = `
+                ${sectionMeta(records)}
+                <table class="detail-table">
+                    <thead>
+                        <tr>
+                            <th>Unidad</th>
+                            <th>Nombre Utilizado</th>
+                            <th>Cliente</th>
+                            <th>Folio</th>
+                            <th class="num">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sorted.map(row => `
+                            <tr>
+                                <td>${escapeHtml(row.unidad)}</td>
+                                <td>${escapeHtml(row.nombre_utilizado || "Sin responsable")}</td>
+                                <td>${escapeHtml(String(row.cliente || "").slice(0, 8))}</td>
+                                <td>${escapeHtml(row.folio)}</td>
+                                <td class="num">${fmtMoney(row.monto)}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function renderClientSummary(records) {
+            const host = document.getElementById("clientSummary");
+            const clientMap = new Map();
+            records.forEach(row => {
+                const client = row.cliente || "Sin cliente";
+                if (!clientMap.has(client)) {
+                    clientMap.set(client, {
+                        cliente: client,
+                        supQ: 0,
+                        supMonto: 0,
+                        otQ: 0,
+                        otMonto: 0
+                    });
+                }
+                const item = clientMap.get(client);
+                if (row.kind === "supervisor") {
+                    item.supQ += 1;
+                    item.supMonto += Number(row.monto || 0);
+                } else if (row.kind === "ot") {
+                    item.otQ += 1;
+                    item.otMonto += Number(row.monto || 0);
+                }
+            });
+
+            const rows = [...clientMap.values()]
+                .filter(row => row.supQ || row.otQ)
+                .sort((a, b) => (b.supQ + b.otQ) - (a.supQ + a.otQ));
+
+            if (!rows.length) {
+                host.innerHTML = `<div class="empty">Sin casos para el filtro actual.</div>`;
+                return;
+            }
+
+            host.innerHTML = `
+                ${sectionMeta(records)}
+                <table class="client-table">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th class="num">Sup Q</th>
+                            <th class="num">OT/Cod Q</th>
+                            <th class="num">Total Q</th>
+                            <th class="num">Sup $</th>
+                            <th class="num">OT/Cod $</th>
+                            <th class="num">Total $</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows.map(row => `
+                            <tr>
+                                <td>${escapeHtml(row.cliente)}</td>
+                                <td class="num">${fmtNumber(row.supQ)}</td>
+                                <td class="num">${fmtNumber(row.otQ)}</td>
+                                <td class="num">${fmtNumber(row.supQ + row.otQ)}</td>
+                                <td class="num">${fmtMoney(row.supMonto)}</td>
+                                <td class="num">${fmtMoney(row.otMonto)}</td>
+                                <td class="num">${fmtMoney(row.supMonto + row.otMonto)}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function renderAll() {
+            renderBanner();
+            renderUnitFilter();
+            renderOwnerFilter();
+            renderSegmentFilter();
+            renderClientFilter();
+
+            const records = getFilteredRecords();
+            document.getElementById("updatedStamp").textContent = `Actualización BBDD: ${DASHBOARD_DATA.updated_ts}`;
+
+            renderMetricCards("supCards", [
+                { label: "Cantidad de Folios > 10 dias", tone: "red", filter: row => row.kind === "supervisor" && supervisorBucketForRow(row) === "gt10" },
+                { label: "Cantidad de Folios > 5 dias", tone: "orange", filter: row => row.kind === "supervisor" && supervisorBucketForRow(row) === "gt5" },
+                { label: "Cantidad de Folios entre 0 y 5 dias", tone: "green", filter: row => row.kind === "supervisor" && supervisorBucketForRow(row) === "0_5" }
+            ], records);
+
+            renderMetricCards("otCards", [
+                { label: "Cantidad de Folios > 60 dias", tone: "red", filter: row => row.kind === "ot" && otBucketForRow(row) === "gt60" },
+                { label: "Cantidad de Folios > 45 dias", tone: "red", filter: row => row.kind === "ot" && otBucketForRow(row) === "gt45" },
+                { label: "Cantidad de Folios entre 40 y 45 dias", tone: "orange", filter: row => row.kind === "ot" && otBucketForRow(row) === "40_45" },
+                { label: "Cantidad de Folios entre 30 y 40 dias", tone: "amber", filter: row => row.kind === "ot" && otBucketForRow(row) === "30_40" },
+                { label: "Cantidad de Folios entre 0 y 30 dias", tone: "green", filter: row => row.kind === "ot" && otBucketForRow(row) === "0_30" }
+            ], records);
+
+            renderHierarchyList("supSummary", records.filter(row => row.kind === "supervisor"), "Sin casos pendientes de validación supervisor.");
+            renderDetailTable("supCritical", records.filter(row => row.kind === "supervisor" && supervisorBucketForRow(row) === "gt10"), "Sin casos criticos > 10 dias.");
+            renderDetailTable("supRisk", records.filter(row => row.kind === "supervisor" && row.sup_risk), "Sin casos de riesgo proximo lunes.");
+
+            renderHierarchyList("otSummary", records.filter(row => row.kind === "ot"), "Sin casos pendientes de OT/Código.");
+            renderDetailTable("otCritical60", records.filter(row => row.kind === "ot" && otBucketForRow(row) === "gt60"), "Sin casos > 60 dias.");
+            renderDetailTable("otCritical45", records.filter(row => row.kind === "ot" && otBucketForRow(row) === "gt45"), "Sin casos > 45 dias.");
+            renderDetailTable("otRisk40", records.filter(row => row.kind === "ot" && otBucketForRow(row) === "40_45"), "Sin casos entre 40 y 45 dias.");
+            renderDetailTable("otRange30", records.filter(row => row.kind === "ot" && otBucketForRow(row) === "30_40"), "Sin casos entre 30 y 40 dias.");
+            renderDetailTable("otRange0", records.filter(row => row.kind === "ot" && otBucketForRow(row) === "0_30"), "Sin casos entre 0 y 30 dias.");
+
+            renderClientSummary(records);
+        }
+
+        renderAll();
+    </script>
+</body>
+</html>
